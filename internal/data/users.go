@@ -7,7 +7,7 @@ import (
 	"errors"
 	"time"
 
-	"golang.org/x/crypto/bcrypt"
+	"natenine.backend.API/internal/password"
 	"natenine.backend.API/internal/validator"
 )
 
@@ -18,13 +18,13 @@ var (
 var AnonymousUser = &User{}
 
 type User struct {
-	ID        int64     `json:"id"`
-	CreatedAt time.Time `json:"created_at"`
-	Name      string    `json:"name"`
-	Email     string    `json:"email"`
-	Password  password  `json:"-"`
-	Activated bool      `json:"activated"`
-	Version   int       `json:"-"`
+	ID        int64             `json:"id"`
+	CreatedAt time.Time         `json:"created_at"`
+	Name      string            `json:"name"`
+	Email     string            `json:"email"`
+	Password  password.Password `json:"-"`
+	Activated bool              `json:"activated"`
+	Version   int               `json:"-"`
 }
 
 // check if a user instance is AnonymousUser
@@ -32,65 +32,32 @@ func (u *User) IsAnonumous() bool {
 	return u == AnonymousUser
 }
 
-type password struct {
-	plainText *string
-	hash      []byte
-}
-
-// The Set() method calculates the bcrypt hash of a plaintext password, and stores both
-// the hash and the plaintext versions in the struct.
-func (p *password) Set(plainTestPassword string) error {
-	hash, err := bcrypt.GenerateFromPassword([]byte(plainTestPassword), 12)
-	if err != nil {
-		return err
-	}
-
-	p.plainText = &plainTestPassword
-	p.hash = hash
-
-	return nil
-}
-
-// The Matches() method checks whether the provided plaintext password matches the
-// hashed password stored in the struct, returning true if it matches and false
-// otherwise.
-func (p *password) Matches(plainTestPassword string) (bool, error) {
-	err := bcrypt.CompareHashAndPassword(p.hash, []byte(plainTestPassword))
-	if err != nil {
-		switch {
-		case errors.Is(err, bcrypt.ErrMismatchedHashAndPassword):
-			return false, nil
-		default:
-			return false, err
-		}
-	}
-	return true, nil
-}
-
 func ValidateEmail(v *validator.Validator, email string) {
 	v.Check(email != "", "email", "must be provided")
 	v.Check(validator.Matches(email, validator.EmailRX), "email", "must be a valid email address")
 }
 
-func ValidatePassowrdPlaintext(v *validator.Validator, password string) {
-	v.Check(password != "", "password", "must be provided")
-	v.Check(len(password) >= 8, "password", "must be at least 8 bytes long")
-	v.Check(len(password) <= 72, "password", "must not be more than 72 bytes long")
+func ValidatePassowrdPlaintext(v *validator.Validator, pass string) {
+	v.Check(pass != "", "password", "must be provided")
+	v.Check(len(pass) >= 8, "password", "must be at least 8 bytes long")
+	v.Check(len(pass) <= 72, "password", "must not be more than 72 bytes long")
+	v.Check(validator.NotIn(pass, password.CommonPasswords...), "Password", "Password is too common")
 }
 
 func ValidateUser(v *validator.Validator, user *User) {
+
 	v.Check(user.Name != "", "name", "must be provided")
 	v.Check(len(user.Name) <= 500, "name", "must not be more than 500 bytes long")
 
 	ValidateEmail(v, user.Email)
 
-	if user.Password.plainText != nil {
-		ValidatePassowrdPlaintext(v, *user.Password.plainText)
+	if user.Password.PlainText != nil {
+		ValidatePassowrdPlaintext(v, *user.Password.PlainText)
 	}
 
 	// If the password hash is ever nil, this will be due to a logic error in our
 	// codebase (probably because we forgot to set a password for the user).
-	if user.Password.hash == nil {
+	if user.Password.Hash == nil {
 		panic("missing password hash for user")
 	}
 }
@@ -106,7 +73,7 @@ func (m UserModel) Insert(user *User) error {
 			VALUES ($1, $2, $3, $4)
 			RETURNING id, created_at, version`
 
-	args := []any{user.Name, user.Email, user.Password.hash, user.Activated}
+	args := []any{user.Name, user.Email, user.Password.Hash, user.Activated}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
@@ -140,7 +107,7 @@ func (m UserModel) GetByEmail(email string) (*User, error) {
 		&user.CreatedAt,
 		&user.Name,
 		&user.Email,
-		&user.Password.hash,
+		&user.Password.Hash,
 		&user.Activated,
 		&user.Version,
 	)
@@ -166,7 +133,7 @@ func (m UserModel) Update(user *User) error {
 	args := []any{
 		user.Name,
 		user.Email,
-		user.Password.hash,
+		user.Password.Hash,
 		user.Activated,
 		user.ID,
 		user.Version,
@@ -217,7 +184,7 @@ func (m UserModel) GetForToken(tokenScope, tokenPlainText string) (*User, error)
 		&user.CreatedAt,
 		&user.Name,
 		&user.Email,
-		&user.Password.hash,
+		&user.Password.Hash,
 		&user.Activated,
 		&user.Version,
 	)
