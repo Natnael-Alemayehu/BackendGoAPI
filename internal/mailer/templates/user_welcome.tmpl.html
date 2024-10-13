@@ -1,0 +1,44 @@
+{{define "subject"}}Welcome to NateAPI!{{end}}
+
+{{define "plainBody"}}
+Hi,
+
+Thanks for signing up for a NateAPI account. We're excited to have you on board!
+
+for future reference, your user ID number is {{.UserID}}.
+
+Please send a request to the `PUT /v1/users/activated` endpoint with the following JSON
+body to activate your account:
+
+{"token": "{{.activationToken}}"}
+
+Please note that this is a one-time use token and it will expire in 3 days.
+
+Thanks,
+
+The NateAPI team
+{{end}}
+
+{{define "htmlBody"}}
+<!doctype html>
+<html>
+    <head>
+        <meta name="viewport" content="width=device-width" />
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    </head>
+    <body>
+        <p>Hi,</p>
+        <p>Thanks for signing up for a NateAPI account. We're excited to have you on board!</p>
+        <p>For future reference, your user ID number is {{.UserID}}.</p>
+        <p>Please send a request to the <code>PUT /v1/user/activated</code> endpoint with the following JSON body to
+           activate your account: </p>
+        <pre>
+            <code>
+            {"token":"{{.activationToken}}"}
+            </code>
+        </pre>
+        <p>Thanks,</p>
+        <p>The NateAPI team</p>
+    </body>
+</html>
+{{end}}
