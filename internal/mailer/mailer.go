@@ -3,10 +3,13 @@ package mailer
 import (
 	"bytes"
 	"embed"
+	"fmt"
 	"html/template"
+	"os"
 	"time"
 
 	"github.com/go-mail/mail/v2"
+	"natenine.backend.API/internal/jsonlog"
 )
 
 // Below we declare a new variable with the type embed.FS (embedded file system) to hold
@@ -37,6 +40,9 @@ func New(host string, port int, username, password, sender string) Mailer {
 // as the first parameter, the name of the file containing the templates, and any
 // dynamic data for the templates as an any parameter.
 func (m Mailer) Send(recipient, templateFile string, data any) error {
+
+	logger := jsonlog.New(os.Stdout, jsonlog.LevelInfo)
+
 	tmpl, err := template.New("email").ParseFS(templateFS, "templates/"+templateFile)
 	if err != nil {
 		return err
@@ -78,10 +84,12 @@ func (m Mailer) Send(recipient, templateFile string, data any) error {
 		err = m.dailer.DialAndSend(msg)
 		// If everything worked, return nil.
 		if nil == err {
+			logger.PrintInfo(fmt.Sprintf("Confirmation Email was sent successfully to %s!", recipient), nil)
 			return nil
 		}
-		time.Sleep(500 * time.Millisecond)
+		time.Sleep(10 * time.Second)
 	}
 
+	logger.PrintError(fmt.Errorf("%s", err), nil)
 	return err
 }

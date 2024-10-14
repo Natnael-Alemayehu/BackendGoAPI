@@ -65,7 +65,7 @@ func main() {
 	// Setting the DSN for the database
 	flag.StringVar(&cfg.db.dsn, "db-dsn", "", "PostgreSQL DSN")
 
-	// Setting connection pool settings from the command line.
+	// Setting DB connection
 	flag.IntVar(&cfg.db.maxOpenConns, "db-max-open-conns", 25, "PostgreSQL max open connections")
 	flag.IntVar(&cfg.db.maxIdleConns, "db-max-idle-conns", 25, "PostgreSQL max idle connections")
 	flag.StringVar(&cfg.db.maxIdleTime, "db-max-idle-time", "15m", "PostgreSQL max connection idle time")
@@ -75,12 +75,12 @@ func main() {
 	flag.IntVar(&cfg.limiter.burst, "limiter-burst", 4, "Rate limiter maximum burst")
 	flag.BoolVar(&cfg.limiter.enabled, "limiter-enabled", true, "Enable rate limiter")
 
-	// configuring the SMTP server setting
-	flag.StringVar(&cfg.smtp.host, "smtp-host", "sandbox.smtp.mailtrap.io", "SMTP host")
-	flag.IntVar(&cfg.smtp.port, "smtp-port", 2525, "SMTP port")
-	flag.StringVar(&cfg.smtp.username, "smtp-username", "55c277f2c6b9e0", "SMTP username")
-	flag.StringVar(&cfg.smtp.password, "smtp-password", "d28bb701f78ad8", "SMTP password")
-	flag.StringVar(&cfg.smtp.sender, "smtp-sender", "se.natnael.alemayehu@gmail.com", "SMTP sender")
+	// configuring the SMTP server setting SMTP password is set in the .envrc
+	flag.StringVar(&cfg.smtp.host, "smtp-host", "mail.natenine.com", "SMTP host")
+	flag.IntVar(&cfg.smtp.port, "smtp-port", 465, "SMTP port")
+	flag.StringVar(&cfg.smtp.username, "smtp-username", "info@natenine.com", "SMTP username")
+	flag.StringVar(&cfg.smtp.password, "smtp-password", "", "SMTP password")
+	flag.StringVar(&cfg.smtp.sender, "smtp-sender", "info@natenine.com", "SMTP sender")
 
 	// Configuring CORS
 	flag.Func("cors-trusted-origins", "Trusted CORS origins (space separated)", func(val string) error {
